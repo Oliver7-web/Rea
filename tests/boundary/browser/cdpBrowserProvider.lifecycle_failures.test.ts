@@ -13,6 +13,106 @@ import {
 } from "../../fixtures/fakeCdpBrowser.js";
 import { trackBrowser } from "./cdpBrowserProvider.support.js";
 
+const waitFor = async (ready: () => boolean, description: string) => {
+  const deadline = Date.now() + 5_000;
+  while (!ready()) {
+    if (Date.now() > deadline) throw new Error(description);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+};
+
+describe("CdpBrowserProvider: cancellation during cleanup", () => {
+  it("reports cancellation when an interrupt arrives during page cleanup", async () => {
+    const browser = await startFakeCdpBrowser({
+      hangOnMethod: "Network.disable",
+    });
+    trackBrowser(browser);
+    const controller = new AbortController();
+    const pending = new CdpBrowserProvider().inspectPage(
+      inspectWebPageInputSchema.parse({
+        cdp_endpoint: browser.endpoint,
+        allowed_origins: [browser.allowedOrigin],
+        target_id: "allowed-page",
+        observation_ms: 0,
+      }),
+      { signal: controller.signal },
+    );
+    await waitFor(
+      () => browser.commands.some(({ method }) => method === "Network.disable"),
+      "page cleanup did not start",
+    );
+    controller.abort();
+
+    await expect(pending).resolves.toMatchObject({
+      ok: false,
+      error: {
+        _tag: "AnalysisCancelledError",
+        operation: "inspect_web_page",
+      },
+    });
+  });
+
+  it("reports cancellation when an interrupt arrives during session cleanup", async () => {
+    const browser = await startFakeCdpBrowser({
+      hangOnMethod: "Network.disable",
+    });
+    trackBrowser(browser);
+    const controller = new AbortController();
+    const pending = new CdpBrowserProvider().observeSession(
+      observeWebSessionInputSchema.parse({
+        cdp_endpoint: browser.endpoint,
+        allowed_origins: [browser.allowedOrigin],
+        target_id: "allowed-page",
+        observation_ms: 1,
+      }),
+      { signal: controller.signal },
+    );
+    await waitFor(
+      () => browser.commands.some(({ method }) => method === "Network.disable"),
+      "session cleanup did not start",
+    );
+    controller.abort();
+
+    await expect(pending).resolves.toMatchObject({
+      ok: false,
+      error: {
+        _tag: "AnalysisCancelledError",
+        operation: "observe_web_session",
+      },
+    });
+  });
+
+  it("reports cancellation when an interrupt arrives during source-map download", async () => {
+    const browser = await startFakeCdpBrowser({ hangSourceMap: true });
+    trackBrowser(browser);
+    const controller = new AbortController();
+    const pending = new CdpBrowserProvider().analyzeBundle(
+      analyzeWebBundleInputSchema.parse({
+        cdp_endpoint: browser.endpoint,
+        allowed_origins: [browser.allowedOrigin],
+        target_id: "allowed-page",
+        observation_ms: 0,
+        fetch_source_maps: true,
+      }),
+      { signal: controller.signal },
+    );
+    await waitFor(
+      () =>
+        browser.httpRequests.some(({ url }) => url.startsWith("/app.js.map")),
+      "source-map download did not start",
+    );
+    controller.abort();
+
+    await expect(pending).resolves.toMatchObject({
+      ok: false,
+      error: {
+        _tag: "AnalysisCancelledError",
+        operation: "analyze_web_bundle",
+      },
+    });
+  });
+});
+
 describe("CdpBrowserProvider: cancellation and session events", () => {
   it("honors cancellation during the final progress callback before publishing inspection", async () => {
     const browser = await startFakeCdpBrowser();

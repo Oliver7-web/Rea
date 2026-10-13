@@ -43,7 +43,10 @@ import {
   type WebScreenshotDiff,
 } from "../domain/webScreenshot.js";
 import { AnalysisError } from "../domain/analysisErrorBase.js";
-import { AnalysisInputError } from "../domain/analysisErrorCore.js";
+import {
+  AnalysisCancelledError,
+  AnalysisInputError,
+} from "../domain/analysisErrorCore.js";
 import { BrowserObservationError } from "../domain/browserObservationError.js";
 import { ProviderAdapterError } from "../domain/providerAdapterError.js";
 import type { BrowserObservationOperation } from "../domain/browserObservationErrors.js";
@@ -170,6 +173,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
     options: ExecutionOptions = {},
   ): Promise<Result<WebObservationSession, AnalysisError>> {
     let targetSession: CdpTargetSession | undefined;
+    let result: Result<WebObservationSession, AnalysisError>;
     try {
       const discovery = await discoverCdpEndpoint(
         input.cdp_endpoint,
@@ -184,7 +188,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
         "observe_web_session",
         options.signal,
       );
-      return ok(
+      result = ok(
         webObservationSessionSchema.parse(
           await observeCdpSession({
             connection: targetSession.connection,
@@ -200,7 +204,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
         ),
       );
     } catch (cause: unknown) {
-      return err(providerError(cause, "observe_web_session"));
+      result = err(providerError(cause, "observe_web_session"));
     } finally {
       if (targetSession !== undefined)
         await closeCdpTargetSession(
@@ -209,6 +213,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
           options.signal,
         );
     }
+    return resultAfterCleanup(result, options.signal, "observe_web_session");
   }
 
   async discoverWebMcpTools(
@@ -216,6 +221,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
     options: ExecutionOptions = {},
   ): Promise<Result<WebMcpDiscovery, AnalysisError>> {
     let targetSession: CdpTargetSession | undefined;
+    let result: Result<WebMcpDiscovery, AnalysisError>;
     try {
       const discovery = await discoverCdpEndpoint(
         input.cdp_endpoint,
@@ -230,7 +236,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
         "discover_webmcp_tools",
         options.signal,
       );
-      return ok(
+      result = ok(
         webMcpDiscoverySchema.parse(
           await discoverWebMcp({
             connection: targetSession.connection,
@@ -246,7 +252,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
         ),
       );
     } catch (cause: unknown) {
-      return err(providerError(cause, "discover_webmcp_tools"));
+      result = err(providerError(cause, "discover_webmcp_tools"));
     } finally {
       if (targetSession !== undefined)
         await closeCdpTargetSession(
@@ -255,6 +261,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
           options.signal,
         );
     }
+    return resultAfterCleanup(result, options.signal, "discover_webmcp_tools");
   }
 
   async compareCaptures(
@@ -274,6 +281,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
     options: ExecutionOptions = {},
   ): Promise<Result<WebScreenshot, AnalysisError>> {
     let targetSession: CdpTargetSession | undefined;
+    let result: Result<WebScreenshot, AnalysisError>;
     try {
       const discovery = await discoverCdpEndpoint(
         input.cdp_endpoint,
@@ -288,7 +296,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
         "capture_web_screenshot",
         options.signal,
       );
-      return ok(
+      result = ok(
         webScreenshotSchema.parse(
           await captureCdpScreenshot({
             connection: targetSession.connection,
@@ -304,7 +312,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
         ),
       );
     } catch (cause: unknown) {
-      return err(providerError(cause, "capture_web_screenshot"));
+      result = err(providerError(cause, "capture_web_screenshot"));
     } finally {
       if (targetSession !== undefined)
         await closeCdpTargetSession(
@@ -313,6 +321,7 @@ export class CdpBrowserProvider implements BrowserObservationPort {
           options.signal,
         );
     }
+    return resultAfterCleanup(result, options.signal, "capture_web_screenshot");
   }
 
   async compareScreenshots(
@@ -370,6 +379,10 @@ export class CdpBrowserProvider implements BrowserObservationPort {
           CLEANUP_DOMAINS,
           options.signal,
         );
+      // Cleanup can notice an interrupt and still return the captured page.
+      // Refuse that page before inspection or bundle analysis publishes it.
+      if (options.signal?.aborted === true)
+        throw new AnalysisCancelledError(operation);
     }
   }
 }
@@ -454,6 +467,25 @@ const providerError = (
     ? new BrowserObservationError(operation, cause.reason, { cause })
     : cause instanceof AnalysisError
       ? cause
-      : new ProviderAdapterError(CDP_BROWSER_PROVIDER_IDENTITY.id, operation, {
-          cause,
-        });
+      : isAbortError(cause)
+        ? new AnalysisCancelledError(operation, { cause })
+        : new ProviderAdapterError(
+            CDP_BROWSER_PROVIDER_IDENTITY.id,
+            operation,
+            {
+              cause,
+            },
+          );
+
+/** An interrupt during cleanup must replace a result that was already built. */
+const resultAfterCleanup = <Value>(
+  result: Result<Value, AnalysisError>,
+  signal: AbortSignal | undefined,
+  operation: BrowserObservationOperation,
+): Result<Value, AnalysisError> =>
+  signal?.aborted === true
+    ? err(new AnalysisCancelledError(operation))
+    : result;
+
+const isAbortError = (cause: unknown): boolean =>
+  cause instanceof Error && cause.name === "AbortError";
