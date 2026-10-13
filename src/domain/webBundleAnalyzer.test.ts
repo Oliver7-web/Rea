@@ -257,9 +257,15 @@ describe("web bundle static-analysis parity", () => {
       "/dynamic-method",
       "/shadowed-parent-xhr",
       "/xhr-get",
-      "api/relative",
       "https://xhr.example.test/submit",
     ]);
+    expect(result.inferences).toContainEqual(
+      expect.objectContaining({
+        kind: "endpoint_candidate",
+        value: "api/relative",
+        confidence: "low",
+      }),
+    );
   });
 });
 
@@ -356,11 +362,123 @@ describe("web bundle API classification parity", () => {
       "/search",
       "/users",
       "/v1/headers",
-      "cache-key",
       "https://api.example.test/headers",
       "https://api.example.test/users",
+    ]);
+    expect(
+      result.inferences
+        .filter(({ kind }) => kind === "endpoint_candidate")
+        .map(({ value }) => value)
+        .sort(),
+    ).toEqual(["cache-key", "users"]);
+  });
+});
+
+describe("web bundle endpoint candidate classification", () => {
+  it("keeps ambiguous HTTP-method arguments as candidates instead of endpoint observations", () => {
+    const source = `
+      fetch("login");
+      api.get("/api/users");
+      api.get("users");
+      form.get("passwordControl");
+      translate.get("ADDRESS_ADDED");
+      cookieService.put("token", value);
+      http.request("POST", target);
+      snackBar.open(message, "X");
+      xhr.open(method, "login");
+      xhr.open("GET", "ping");
+    `;
+    const result = analyzeCapturedWebBundle(inspection(source));
+    expect(
+      result.observations.endpoints.map(({ value }) => value).sort(),
+    ).toEqual(["/api/users", "login", "ping"]);
+    const candidates = result.inferences.filter(
+      ({ kind }) => kind === "endpoint_candidate",
+    );
+    expect(candidates.map(({ value }) => value).sort()).toEqual([
+      "ADDRESS_ADDED",
+      "POST",
+      "X",
+      "login",
+      "passwordControl",
+      "token",
       "users",
     ]);
+    expect(
+      candidates.every(
+        ({ confidence, basis }) =>
+          confidence === "low" &&
+          basis.length === 1 &&
+          basis[0]?.artifact_sha256 ===
+            createWebTextArtifact(source, "text/javascript").sha256 &&
+          basis[0]?.line !== null &&
+          basis[0]?.detector.startsWith("call:"),
+      ),
+    ).toBe(true);
+    const staticEndpoints = analyzeJavaScriptStaticSource(source).endpoints;
+    expect(
+      staticEndpoints
+        .filter(({ interpretation }) => interpretation === "candidate")
+        .map(({ value }) => value)
+        .sort(),
+    ).toEqual(candidates.map(({ value }) => value).sort());
+    expect(
+      staticEndpoints
+        .filter(({ interpretation }) => interpretation === undefined)
+        .map(({ value }) => value)
+        .sort(),
+    ).toEqual(result.observations.endpoints.map(({ value }) => value).sort());
+    expect(webBundleAnalysisSchema.parse(result)).toEqual(result);
+  });
+
+  it("deduplicates repeated candidate sites while keeping script, value and detector identity", () => {
+    const source = `${'form.get("name");\n'.repeat(5_000)}translate.get("name");\nform.get("other");`;
+    const captured = inspection(source);
+    const first = captured.scripts.items[0];
+    if (first === undefined) throw new Error("Missing captured script fixture");
+    const secondKey = `scr_${"2".repeat(64)}`;
+    const result = analyzeCapturedWebBundle({
+      ...captured,
+      scripts: {
+        total: 2,
+        items: [
+          first,
+          {
+            ...first,
+            script_key: secondKey,
+            url: `${origin}/assets/second.js`,
+          },
+        ],
+      },
+    });
+    const candidates = result.inferences.filter(
+      ({ kind }) => kind === "endpoint_candidate",
+    );
+    expect(candidates).toHaveLength(6);
+    for (const scriptKey of [first.script_key, secondKey]) {
+      const local = candidates.filter(
+        ({ basis }) => basis[0]?.script_key === scriptKey,
+      );
+      expect(
+        local.map(({ value, basis }) => [value, basis[0]?.detector]),
+      ).toEqual([
+        ["name", "call:form.get:unverified-network-receiver"],
+        ["name", "call:translate.get:unverified-network-receiver"],
+        ["other", "call:form.get:unverified-network-receiver"],
+      ]);
+      expect(local[0]?.basis[0]).toMatchObject({
+        line: 1,
+        column: 0,
+        artifact_sha256: createWebTextArtifact(source, "text/javascript")
+          .sha256,
+      });
+    }
+    expect(result.observations.endpoints).toEqual([]);
+    expect(result.capture.source_artifacts).toHaveLength(2);
+    expect(result.completeness).toMatchObject({
+      status: "complete",
+      parsed_scripts: 2,
+    });
   });
 });
 
@@ -408,11 +526,16 @@ describe("web bundle configuration and navigation parity", () => {
       "shadowed",
       "users",
     ];
+    const web = analyzeCapturedWebBundle(inspection(source));
+    expect(web.observations.endpoints.map(({ value }) => value)).toEqual([
+      "/v1/settings",
+    ]);
     expect(
-      analyzeCapturedWebBundle(inspection(source))
-        .observations.endpoints.map(({ value }) => value)
+      web.inferences
+        .filter(({ kind }) => kind === "endpoint_candidate")
+        .map(({ value }) => value)
         .sort(),
-    ).toEqual(expected);
+    ).toEqual(expected.slice(1));
     expect(
       analyzeJavaScriptStaticSource(source)
         .endpoints.map(({ value }) => value)
