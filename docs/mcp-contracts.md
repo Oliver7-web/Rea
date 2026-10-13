@@ -21,6 +21,20 @@ directly to `compare_functions`, and `inspect_artifact` Evidence to
 `compare_artifacts`. Use `get_evidence_bundle` when the task needs broader
 retained session history or an explicit bundle for transfer.
 
+Function dossiers can declare per-facet coverage in the optional
+`normalized_result.facet_availability` map. Each supplied facet is either
+`{ "available": true }` or `{ "available": false, "reason": "..." }`.
+Supported keys are `pseudocode`, `assembly`, `comments`, `callers`, `callees`,
+`references`, `strings_names`, and `cfg`. Availability describes whether that
+facet was observed, not whether its collection contains any entries.
+
+`compare_functions` keeps a dimension `unknown` with null counts when either
+side declares a required facet unavailable. An empty legacy facet without a
+coverage declaration is also unknown. A producer that actually observed an
+empty facet can declare it available so observed absence remains comparable.
+Call comparison additionally retains the Evidence relationship coverage
+checks. IDA declares the facets its selected adapter cannot provide; an empty
+unsupported array does not prove observed absence.
 Evidence and bundle imports reject unsupported fields in their envelopes,
 identities, manifests and other fixed metadata before authentication. Imports
 leave retained session state unchanged when validation fails. Keep application
@@ -51,7 +65,7 @@ unresolved relationship reads. Cancellation remains a tool error.
 REA prepares complete MCP results within the pinned stdio client's 10 MiB
 receive-buffer budget, including both text and structured representations and
 room for the JSON-RPC envelope. Tool errors carry only their text
-representation, so only that text counts against the budget. Response budget settings are captured at startup;
+representation and `isError` flag, so only those count against the budget. Response budget settings are captured at startup;
 restart or recreate the server to apply changes. If a result cannot fit, REA returns
 `resource_constraint` with `details.resource: "transport"` before constructing
 a document-sized string. Analysis Evidence remains complete in the current
