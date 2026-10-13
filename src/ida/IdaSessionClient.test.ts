@@ -427,6 +427,68 @@ describe("attached IDA function observations", () => {
   });
 });
 
+describe("attached IDA legacy string inventory", () => {
+  it("fetches legacy strings and literal searches in single upstream calls instead of paging", async () => {
+    const { producer, client } = await fixture();
+    const all = Array.from({ length: 250 }, (_, i) => ({
+      address: `0x${(0x3000 + i).toString(16)}`,
+      length: 5,
+      string: `hello-${i}`,
+    }));
+    producer.overrideCall = (name, args) => {
+      if (name === "list_strings") {
+        const offset = Number(args.offset ?? 0);
+        const count = Number(args.count ?? 100);
+        const data = count === 0 ? all : all.slice(offset, offset + count);
+        return {
+          data,
+          next_offset:
+            count === 0 || offset + count >= all.length ? null : offset + count,
+        };
+      }
+      return undefined;
+    };
+    const listed = await client.execute("list_strings", {});
+    expect(listed.ok && listed.value.result).toHaveLength(250);
+    const listedResult = listed.ok
+      ? (listed.value.result as { address: string; value: string }[])
+      : [];
+    expect(listedResult[0]).toMatchObject({
+      address: "0x3000",
+      value: "hello-0",
+    });
+    expect(listedResult[249]).toMatchObject({
+      address: "0x30f9",
+      value: "hello-249",
+    });
+    const listCalls = producer.calls.filter(
+      ({ name }) => name === "list_strings",
+    );
+    expect(listCalls).toHaveLength(1);
+    expect(listCalls[0]?.args.count).toBe(0);
+    const found = await client.execute("search_strings", {
+      pattern: "hello-1",
+      mode: "literal",
+    });
+    expect(found.ok && found.value.result).toHaveLength(111);
+    const foundResult = found.ok
+      ? (found.value.result as { address: string; value: string }[])
+      : [];
+    expect(foundResult[0]).toMatchObject({
+      address: "0x3001",
+      value: "hello-1",
+    });
+    expect(foundResult[110]).toMatchObject({
+      address: "0x30c7",
+      value: "hello-199",
+    });
+    expect(
+      producer.calls.filter(({ name }) => name === "list_strings"),
+    ).toHaveLength(2);
+    await client.close();
+  });
+});
+
 const busyHealth = (busyTool?: JsonValue): JsonValue => ({
   status: "busy",
   uptime_sec: 1.041,
