@@ -2,6 +2,7 @@ import * as t from "@babel/types";
 
 import {
   semanticStaticPropertyKey,
+  semanticWriteSiteTarget,
   semanticWriteTargets,
   unwrapJavaScriptExpression,
 } from "./javascriptAstValues.js";
@@ -136,16 +137,8 @@ export function* collectJavaScriptIdentityWritesSteps(
           }
         }
       }
-      const target = t.isAssignmentExpression(node)
-        ? node.left
-        : t.isUpdateExpression(node)
-          ? node.argument
-          : t.isUnaryExpression(node, { operator: "delete" })
-            ? node.argument
-            : t.isForOfStatement(node) || t.isForInStatement(node)
-              ? node.left
-              : undefined;
-      if (target === undefined) return;
+      const target = semanticWriteSiteTarget(node);
+      if (target === null) return;
       for (const leaf of semanticWriteTargets(target)) {
         if (t.isIdentifier(leaf)) {
           for (const identity of origin(leaf, "binding"))

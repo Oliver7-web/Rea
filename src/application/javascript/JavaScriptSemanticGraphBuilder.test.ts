@@ -952,3 +952,29 @@ it("projects and adopts more than the default per-file capacity when explicitly 
     "exceed the offered tree capacity",
   );
 });
+
+it("projects a destructuring assignment member target as a property write", () => {
+  const graph = graphFor(`
+    const source = { count: 1 };
+    [source.count] = [2];
+  `);
+  const occurrences = graph.nodes.filter(
+    ({ properties }) => properties.operation_kind !== undefined,
+  );
+  expect(occurrences.map(({ label }) => label)).toEqual(["write:/count"]);
+  const slot = graph.nodes.find(
+    ({ kind, properties }) =>
+      kind === "property-slot" && properties.property_pointer === "/count",
+  );
+  expect(graph.relations).toContainEqual(
+    expect.objectContaining({
+      source_node_id: occurrences[0]?.node_id,
+      target_node_id: slot?.node_id,
+      relation: "writes-property",
+      resolution: "resolved",
+    }),
+  );
+  expect(graph.relations).not.toContainEqual(
+    expect.objectContaining({ relation: "reads-property" }),
+  );
+});

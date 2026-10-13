@@ -4,12 +4,12 @@ import type {
   JavaScriptSemanticCallable,
   JavaScriptSemanticObjectOperation,
 } from "./javascriptSemanticIr.js";
-import {
-  semanticCallableIdForNode,
-  semanticReadsBeforeWrite,
-} from "./javascriptSemanticProjection.js";
+import { semanticCallableIdForNode } from "./javascriptSemanticProjection.js";
 import {
   semanticStaticPropertyKey,
+  semanticWriteSiteReadsFirst,
+  semanticWriteSiteTarget,
+  semanticWriteTargets,
   unwrapJavaScriptExpression,
 } from "./javascriptAstValues.js";
 import {
@@ -28,13 +28,26 @@ export const collectJavaScriptSemanticObjects = (
   const output: JavaScriptSemanticObjectOperation[] = [];
   const callableIds = new Set(callables.map(({ callableId }) => callableId));
   const callableStack: string[] = [];
-  const context: ObjectCollectionContext = { state, output };
+  const context: ObjectCollectionContext = {
+    state,
+    output,
+    writeTargets: new Map(),
+  };
   traverseJavaScriptAst(program, {
     enter: (node, parent) => {
       const callableId = semanticCallableIdForNode(node);
       if (callableId !== null && callableIds.has(callableId))
         callableStack.push(callableId);
       const ownerCallableId = callableStack.at(-1) ?? null;
+      // A write site is entered before its target members, so recording the
+      // written leaves here lets a member nested in a destructuring pattern
+      // (`[o.a] = v`), a loop head (`for (o.a of v)`), `delete o.a`, or a
+      // wrapped target (`o.a! += 1`) be classified from its owning site
+      // instead of from its immediate parent.
+      const writeTarget = semanticWriteSiteTarget(node);
+      if (writeTarget !== null)
+        for (const leaf of semanticWriteTargets(writeTarget))
+          if (!t.isIdentifier(leaf)) context.writeTargets.set(leaf, node);
       if (t.isMemberExpression(node) || t.isOptionalMemberExpression(node))
         collectMember(node, parent, ownerCallableId, context);
       else if (
@@ -73,6 +86,8 @@ export const collectJavaScriptSemanticObjects = (
 interface ObjectCollectionContext {
   readonly state: JavaScriptSemanticAnalysisState;
   readonly output: JavaScriptSemanticObjectOperation[];
+  /** Not-yet-visited member expressions, each keyed to the site writing it. */
+  readonly writeTargets: Map<t.Node, t.Node>;
 }
 
 const collectMember = (
@@ -90,10 +105,13 @@ const collectMember = (
   )
     return;
   const identity = expressionObjectIdentity(node, state);
-  const write =
-    (t.isAssignmentExpression(parent) && parent.left === node) ||
-    (t.isUpdateExpression(parent) && parent.argument === node);
-  const readsBeforeWrite = write && semanticReadsBeforeWrite(node, parent);
+  // Each member is visited once, so consuming its entry keeps the map bounded
+  // to the write targets not yet reached.
+  const writeSite = context.writeTargets.get(node);
+  context.writeTargets.delete(node);
+  const write = writeSite !== undefined;
+  const readsBeforeWrite =
+    writeSite !== undefined && semanticWriteSiteReadsFirst(writeSite);
   if (readsBeforeWrite)
     addObjectOperation(
       {
