@@ -8,7 +8,10 @@ import { ghidraFunctionDossier } from "../../domain/ghidraValues.fixture.js";
 import { functionDossierSchema } from "../../domain/hopperValues.js";
 import { jsonValueSchema } from "../../domain/jsonValue.js";
 import { nativeValueTraceSchema } from "../../domain/native/nativeValueTrace.js";
-import { AnalysisCancelledError } from "../../domain/analysisErrorCore.js";
+import {
+  AnalysisCancelledError,
+  AnalysisOutputError,
+} from "../../domain/analysisErrorCore.js";
 import { ok, err } from "../../domain/result.js";
 
 const subject = {
@@ -314,6 +317,97 @@ const callBindingAnalysis = (
       ),
     );
   },
+});
+
+describe("native value failed-callee traversal", () => {
+  it("attempts a repeated failed selector once and still analyzes a later callee", async () => {
+    const base = functionDossierSchema.parse(ghidraFunctionDossier());
+    const caller = nativeFlowDossier(base, {
+      address: "0x1000",
+      name: "caller",
+      operations: [
+        node("bad-1", "0x1100", "CALL"),
+        node("bad-2", "0x1104", "CALL"),
+        node("good", "0x1108", "CALL"),
+      ],
+      parameters: [],
+    });
+    const good = nativeFlowDossier(base, {
+      address: "0x3000",
+      name: "good",
+      operations: [],
+      parameters: [],
+    });
+    const attempts: string[] = [];
+    const port: AnalysisOperationPort = {
+      execute: async (operation, parameters) => {
+        if (operation === "resolve_native_call_targets") {
+          const destination =
+            parameters.address === "0x1108" ? "0x3000" : "0x2000";
+          return ok(
+            createAnalysisExecution(
+              {
+                call_site: String(parameters.address),
+                procedure: "0x1000",
+                status: "direct",
+                mechanism: "direct",
+                targets: [
+                  {
+                    address: destination,
+                    procedure: destination,
+                    status: "direct",
+                    basis: "provider-reference",
+                    references: [],
+                  },
+                ],
+                limitations: [],
+              },
+              provider,
+              { subject },
+            ),
+          );
+        }
+        expect(operation).toBe("analyze_function");
+        const selector = String(parameters.procedure);
+        attempts.push(selector);
+        if (selector === "0x2000")
+          return err(
+            new AnalysisOutputError("analyze_function", "Callee unavailable"),
+          );
+        return ok(
+          createAnalysisExecution(
+            selector === "0x1000" ? caller : good,
+            provider,
+            { subject },
+          ),
+        );
+      },
+    };
+    // A new invocation retries the failed selector: failures are not cached
+    // across traces, and successful procedure identity remains separate.
+    for (let run = 0; run < 2; run++) {
+      attempts.length = 0;
+      const result = await traceNativeValues(port, {
+        procedure: "0x1000",
+        max_functions: 3,
+      });
+      if (!result.ok) throw result.error;
+      const trace = nativeValueTraceSchema.parse(result.value);
+      expect(attempts).toEqual(["0x1000", "0x2000", "0x3000"]);
+      expect(trace.decompilations).toBe(3);
+      expect(trace.procedures.map(({ address }) => address)).toEqual([
+        "0x1000",
+        "0x3000",
+      ]);
+      expect(trace.unknowns).toContainEqual({
+        procedure: "0x2000",
+        address: null,
+        reason: expect.stringContaining("Callee unavailable"),
+      });
+      expect(trace.edges.filter(({ kind }) => kind === "call")).toHaveLength(3);
+      expect(trace.truncated).toBe(false);
+    }
+  });
 });
 
 describe("native value call-binding fan-out", () => {

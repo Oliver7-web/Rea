@@ -34,6 +34,7 @@ export const traceNativeValues = async (
     evidence_id: string;
   }[] = [];
   const pending = [{ procedure: input.procedure, depth: 0 }];
+  const attempted = new Set<string>();
   const visited = new Set<string>();
   let targetSha256: string | undefined;
   let truncated = false;
@@ -44,7 +45,12 @@ export const traceNativeValues = async (
     if (signal?.aborted)
       return err(new AnalysisCancelledError("trace_native_values"));
     const next = pending.shift();
-    if (next === undefined || visited.has(next.procedure)) continue;
+    if (
+      next === undefined ||
+      attempted.has(next.procedure) ||
+      visited.has(next.procedure)
+    )
+      continue;
     if (decompilations >= input.max_functions) {
       truncated = true;
       unknowns.push({
@@ -54,6 +60,9 @@ export const traceNativeValues = async (
       });
       break;
     }
+    // An exact selector is attempted once per trace, even on failure. Only
+    // successful dossiers establish canonical procedure identity in visited.
+    attempted.add(next.procedure);
     const execution = await analysis.execute(
       "analyze_function",
       { procedure: next.procedure },
