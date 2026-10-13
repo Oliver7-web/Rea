@@ -1,16 +1,16 @@
 import * as t from "@babel/types";
 
-import { analyzeParsedJavaScriptReferences } from "./javascript/javascriptSemanticAnalysis.js";
+import { analyzeParsedJavaScriptReferences } from "./javascriptSemanticAnalysis.js";
 import {
   semanticBindingId,
   semanticScopeId,
-} from "./javascript/javascriptSemanticState.js";
-import { traverseJavaScriptAst } from "./javascript/javascriptSemanticTraversal.js";
-import type { JavaScriptSemanticReference } from "./javascript/javascriptSemanticIr.js";
+} from "./javascriptSemanticState.js";
+import { traverseJavaScriptAst } from "./javascriptSemanticTraversal.js";
+import type { JavaScriptSemanticReference } from "./javascriptSemanticIr.js";
 import {
   isExplicitModuleSourcePath,
   type ParsedJavaScriptSource,
-} from "./javascript/javascriptSourceParser.js";
+} from "./javascriptSourceParser.js";
 
 /**
  * Keep calls that resolve either to Node's CommonJS wrapper loader or to a
@@ -18,12 +18,15 @@ import {
  * analyzer supplies binding ownership; this boundary accounts for the two
  * Node loader bindings without evaluating arbitrary values.
  */
-export const unshadowedReferenceSourceRequireCalls = (
+export const unshadowedJavaScriptRequireCalls = (
   file: Pick<ParsedJavaScriptSource, "program">,
-  path: string,
-): ReadonlySet<t.CallExpression> => {
+  sourcePath: string | undefined,
+  referenceFacts: readonly JavaScriptSemanticReference[] = analyzeParsedJavaScriptReferences(
+    file,
+  ),
+): ReadonlySet<t.Node> => {
   const references = new Map(
-    analyzeParsedJavaScriptReferences(file).map((reference) => [
+    referenceFacts.map((reference) => [
       `${reference.location.start.line}:${reference.location.start.column}`,
       reference,
     ]),
@@ -35,7 +38,8 @@ export const unshadowedReferenceSourceRequireCalls = (
   // Syntax alone cannot establish Node's runtime mode: `.js` depends on its
   // package scope, and `.ts` may be compiled with a CommonJS module target.
   // Keep unmarked paths runtime-unknown and preserve candidate require edges.
-  const allowsUnboundRequire = !isExplicitModuleSourcePath(path);
+  const allowsUnboundRequire =
+    sourcePath === undefined || !isExplicitModuleSourcePath(sourcePath);
   const hasTopLevelVarRequire =
     allowsUnboundRequire && hasUninitializedTopLevelVarRequire(file.program);
   const createRequireBinding = directCreateRequireBinding(
@@ -49,11 +53,16 @@ export const unshadowedReferenceSourceRequireCalls = (
       (reference.resolution === "unbound" ||
         reference.bindingId === programRequireBinding),
   );
-  const calls = new Set<t.CallExpression>();
+  const calls = new Set<t.Node>();
 
   traverseJavaScriptAst(file.program, {
     enter: (node, _parent, readAncestors) => {
-      if (!t.isCallExpression(node)) return;
+      if (
+        !t.isCallExpression(node) &&
+        !t.isOptionalCallExpression(node) &&
+        !t.isNewExpression(node)
+      )
+        return;
       const identifier = requireCalleeIdentifier(node.callee);
       const start = identifier?.loc?.start;
       if (start === undefined) return;

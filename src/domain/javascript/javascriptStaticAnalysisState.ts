@@ -63,6 +63,7 @@ export interface JavaScriptAnalysisAccumulator {
 /** Shared source and accumulator for helper inspections. */
 export interface JavaScriptFindingContext {
   readonly rpcScan: JavaScriptRpcScan;
+  readonly isUnshadowedRequireCall: (node: t.Node) => boolean;
   readonly source: string;
   readonly accumulator: JavaScriptAnalysisAccumulator;
   readonly openReceiverFacts?: ReadonlyMap<number, JavaScriptOpenReceiverFact>;

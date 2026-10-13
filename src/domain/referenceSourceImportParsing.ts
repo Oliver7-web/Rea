@@ -10,7 +10,7 @@ import {
   parseRecoveredJavaScript,
   parserPluginsForPath,
 } from "./javascript/javascriptSourceParser.js";
-import { unshadowedReferenceSourceRequireCalls } from "./referenceSourceRequireBindings.js";
+import { unshadowedJavaScriptRequireCalls } from "./javascript/javascriptRequireBindings.js";
 import { isRelativeJavaScriptModuleSpecifier } from "./javascript/javascriptModuleSpecifier.js";
 import {
   isCallExpression,
@@ -214,7 +214,7 @@ const extractRequireAndDynamicImports = (
   body: readonly Node[],
   from_path: string,
   relationships: ReferenceSourceImportRelationship[],
-  unshadowedRequireCalls: ReadonlySet<CallExpression>,
+  unshadowedRequireCalls: ReadonlySet<Node>,
 ): void => {
   // Single traversal owner: iterative, VISITOR_KEYS-gated, no recursion over
   // loc/comment objects. Survives deeply nested generated member chains that
@@ -369,7 +369,7 @@ export const parseReferenceSourceImports = (
     ast.program.body,
     path,
     relationships,
-    unshadowedReferenceSourceRequireCalls(ast, path),
+    unshadowedJavaScriptRequireCalls(ast, path),
   );
 
   return {

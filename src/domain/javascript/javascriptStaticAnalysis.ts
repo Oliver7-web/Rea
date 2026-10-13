@@ -52,7 +52,11 @@ import {
 } from "./javascriptSourceParser.js";
 
 import { createJavaScriptRpcScan } from "./javascriptRpcEndpoints.js";
-import { semanticImportEqualsSpecifier } from "./javascriptSemanticProjection.js";
+import {
+  collectSemanticReferences,
+  semanticImportEqualsSpecifier,
+} from "./javascriptSemanticProjection.js";
+import { unshadowedJavaScriptRequireCalls } from "./javascriptRequireBindings.js";
 import {
   hasUncertainTypeOnlyModuleSideEffect,
   isTypeOnlyExportDeclaration,
@@ -96,6 +100,7 @@ export function* analyzeParsedJavaScriptStaticSourceSteps(
     bindings,
   );
   const clientRoots = yield* classifyParsedJavaScriptRpcClientRootsSteps(file);
+  let requireCalls: ReadonlySet<t.Node> | undefined;
   yield* traverseStaticSourceSteps(
     file,
     {
@@ -103,6 +108,14 @@ export function* analyzeParsedJavaScriptStaticSourceSteps(
       accumulator,
       ...(openReceiverFacts === undefined ? {} : { openReceiverFacts }),
       electronBindings: electronIdentity.bindings,
+      isUnshadowedRequireCall: (node) => {
+        requireCalls ??= unshadowedJavaScriptRequireCalls(
+          file,
+          undefined,
+          collectSemanticReferences(file.program, bindings),
+        );
+        return requireCalls.has(node);
+      },
       rpcScan: createJavaScriptRpcScan(source, clientRoots),
     },
     bindings,
