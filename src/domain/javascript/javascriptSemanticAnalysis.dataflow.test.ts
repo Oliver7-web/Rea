@@ -210,6 +210,34 @@ describe("JavaScript semantic analysis: read-modify-write", () => {
     ]);
   });
 
+  it.each([
+    ["destructuring assignment", "[source.count] = [2];"],
+    ["destructuring assignment with default", "[source.count = 2] = [];"],
+    [
+      "nested destructuring assignment",
+      "({ value: { count: source.count } } = {});",
+    ],
+    ["rest destructuring assignment", "[...source.items] = [];"],
+    ["for-of head", "for (source.count of [4]) {}"],
+    ["for-in head", "for (source.count in { key: true }) {}"],
+    ["delete", "delete source.count;"],
+  ])("records a member target in %s as a write", (_name, statement) => {
+    const ir = analyzeJavaScriptSemantics(`
+      const source = { count: 1, items: [] };
+      ${statement}
+    `);
+    expect(ir.objectOperations.map(({ kind }) => kind)).toEqual(["write"]);
+  });
+
+  it("keeps a member in a destructuring default value a read", () => {
+    const ir = analyzeJavaScriptSemantics(`
+      const source = { count: 1 };
+      let value;
+      [value = source.count] = [];
+    `);
+    expect(ir.objectOperations.map(({ kind }) => kind)).toEqual(["read"]);
+  });
+
   it("does not model a compound binding write as a competing replacement", () => {
     const ir = analyzeJavaScriptSemantics(`
       let count = 1;

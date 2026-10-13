@@ -35,6 +35,7 @@ import { compareUnicodeCodePoints } from "../unicodeCodePointOrder.js";
 import { traverseJavaScriptAstSteps } from "./javascriptSemanticTraversal.js";
 import {
   semanticStaticPropertyKey,
+  semanticWriteSiteTarget,
   semanticWriteTargets,
   unwrapJavaScriptExpression,
 } from "./javascriptAstValues.js";
@@ -471,12 +472,8 @@ export function* collectSemanticMemberMutationsSteps(
           originAt: source.mutation,
           iterationOnly: source.kind === "iteration",
         });
-      if (t.isAssignmentExpression(node)) markTarget(node.left, node);
-      else if (t.isUpdateExpression(node)) markTarget(node.argument, node);
-      else if (t.isUnaryExpression(node, { operator: "delete" }))
-        markTarget(node.argument, node);
-      else if (t.isForOfStatement(node) || t.isForInStatement(node))
-        markTarget(node.left, node);
+      const writeTarget = semanticWriteSiteTarget(node);
+      if (writeTarget !== null) markTarget(writeTarget, node);
       else if (
         t.isCallExpression(node) ||
         t.isOptionalCallExpression(node) ||
