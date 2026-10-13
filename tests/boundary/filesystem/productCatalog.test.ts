@@ -44,15 +44,15 @@ const README_FACT_FIXTURE_PATHS = [
   "docs/readme/README_ko.md",
   "docs/readme/README_ar.md",
   "website/locales/languages.json",
-  "docs/installation.md",
+  "docs/getting-started/installation.md",
   "AGENTS.md",
   ".github/pull_request_template.md",
 ] as const;
 
 const README_LINK_DRIFT_MUTATIONS = [
   [
-    "(../installation.md#supported-agents)",
-    "(../installation.md#missing-agents)",
+    "(../getting-started/installation.md#supported-agents)",
+    "(../getting-started/installation.md#missing-agents)",
   ],
   [
     "https://rea.tools/zh-CN/guides/native/",
@@ -95,7 +95,7 @@ afterEach(async () => {
 describe("canonical product catalog", () => {
   it("admits every documented browser scenario through the named contract", async () => {
     const guide = await readFile(
-      join(root, "docs/browser-scenario-contract.md"),
+      join(root, "docs/guides/web/browser-scenario-contract.md"),
       "utf8",
     );
     const examples = [
@@ -216,7 +216,9 @@ describe("canonical product catalog drift", () => {
       ],
     };
     const issues = await documentationFactIssues(root, drifted);
-    expect(issues).toContain("docs/installation.md: missing Future Client");
+    expect(issues).toContain(
+      "docs/getting-started/installation.md: missing Future Client",
+    );
     expect(issues).not.toContain("README.md: missing Future Client");
   });
 

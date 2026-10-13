@@ -31,7 +31,7 @@
         "tsconfig.build.json",
         "vitest.config.ts",
         "scripts/**/*.d.mts",
-        "docs/.vitepress/config.ts"
+        "docs/.vitepress/**/*.ts"
       ],
       "outputs": []
     },

@@ -144,6 +144,16 @@ it("keeps every translated README and authored guide on the documentation lane",
   });
 });
 
+it("runs documentation verification when only its published-route verifier changes", async () => {
+  const { directory, base } = await fixture();
+  const head = await change(directory, [
+    "scripts/verify-documentation-routes.mjs",
+  ]);
+  expect(await classify(directory, base, head)).toMatchObject({
+    docs: true,
+  });
+});
+
 it.each([
   "job-timings.mjs",
   "job-timings-batch.mjs",

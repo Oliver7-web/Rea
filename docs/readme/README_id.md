@@ -9,7 +9,7 @@
 **Melihat fitur yang Anda sukai. Pahami cara kerjanya hingga ke tingkat biner.**
 
 [![npm version](https://img.shields.io/npm/v/rea-agents?style=flat-square&color=cb3837)](https://www.npmjs.com/package/rea-agents)
-[![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](../mcp-contracts.md#generated-catalog)
+[![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](../reference/mcp-contracts.md#generated-catalog)
 [![Node.js requirements](https://img.shields.io/badge/Node.js-requirements-339933?style=flat-square&logo=nodedotjs&logoColor=white)](#current-status)
 [![skills.sh](https://skills.sh/b/morluto/rea?style=flat-square)](https://skills.sh/morluto/rea/reverse-engineer-anything)
 [![MIT license](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](../../LICENSE)
@@ -67,7 +67,7 @@ npx rea-agents setup
 
 Pilih agen yang ingin digunakan, tinjau perubahan yang diusulkan, lalu setujui perubahan tersebut. Proses penyiapan menambahkan server MCP REA dan instruksi alur kerja yang sesuai, serta membuat cadangan konfigurasi yang sudah ada. Setelah itu, mulai ulang agen Anda.
 
-Penyiapan mendukung Claude Code, Codex, Cursor, Gemini CLI, Grok Build, dan [agen lainnya](../installation.md#supported-agents). Lihat [instalasi dan penyiapan](../installation.md) untuk konfigurasi penyedia dan pendaftaran MCP secara manual.
+Penyiapan mendukung Claude Code, Codex, Cursor, Gemini CLI, Grok Build, dan [agen lainnya](../getting-started/installation.md#supported-agents). Lihat [instalasi dan penyiapan](../getting-started/installation.md) untuk konfigurasi penyedia dan pendaftaran MCP secara manual.
 
 ### Minta agen Anda
 
@@ -94,7 +94,7 @@ npm install --global rea-agents
 rea --help
 ```
 
-Untuk analisis native, konfigurasikan penyedia terlebih dahulu. Lihat [Panduan CLI dan Bukti](../cli.md) untuk perintah native, pemilihan penyedia, snapshot, dan pembuatan skrip.
+Untuk analisis native, konfigurasikan penyedia terlebih dahulu. Lihat [Panduan CLI dan Bukti](../getting-started/cli.md) untuk perintah native, pemilihan penyedia, snapshot, dan pembuatan skrip.
 
 ### Perbarui REA
 
@@ -139,39 +139,39 @@ Alat tambahan dan dukungan sistem host bergantung pada target yang dianalisis:
 | Target                     | Hasil yang diberikan REA                                                                              | Persyaratan dan panduan                                                                                                        |
 | -------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Biner native               | Pseudocode, assembly, string, simbol, pemanggilan, dan referensi                                      | Hopper, Ghidra, atau IDA; [analisis native](https://rea.tools/id/guides/native/)                                               |
-| Tata letak ELF offline     | Bagian, segmen, simbol/relokasi asli, dan kandidat mitigasi statis                                    | pwntools yang disediakan pemanggil pada Linux x64; [diagnostik biner](../binary-diagnostics.md)                                |
+| Tata letak ELF offline     | Bagian, segmen, simbol/relokasi asli, dan kandidat mitigasi statis                                    | pwntools yang disediakan pemanggil pada Linux x64; [diagnostik biner](../guides/native/binary-diagnostics.md)                                |
 | Artefak WASM               | Validasi, bagian, bentuk WAT import/ekspor yang tepat, dan WAT yang didekode                          | WABT 1.0.42 yang disediakan pemanggil; `inspect_wasm_artifact`                                                                 |
-| Bytecode EVM               | Selector dispatch, offset byte, argumen yang disimpulkan, dan sifat mutabilitas                       | Pembawa data raw/hex lokal; [panduan EVM offline](../evm-bytecode.md)                                                          |
-| Crash Linux yang direkam   | Catatan mentah, register/sinyal setiap thread yang direkam, dan kandidat pemetaan opsional            | pwntools yang disediakan pemanggil; GDB/pwndbg opsional; [crash yang direkam](../recorded-crashes.md)                          |
+| Bytecode EVM               | Selector dispatch, offset byte, argumen yang disimpulkan, dan sifat mutabilitas                       | Pembawa data raw/hex lokal; [panduan EVM offline](../guides/evm/evm-bytecode.md)                                                          |
+| Crash Linux yang direkam   | Catatan mentah, register/sinyal setiap thread yang direkam, dan kandidat pemetaan opsional            | pwntools yang disediakan pemanggil; GDB/pwndbg opsional; [crash yang direkam](../guides/native/recorded-crashes.md)                          |
 | JavaScript / Electron      | Modul, impor, source map, rute, IPC, dan hubungan add-on native                                       | Node.js dan npm; [analisis aplikasi](https://rea.tools/id/guides/javascript/)                                                  |
 | Situs web                  | Struktur halaman, skrip, pengamatan jaringan, dan tangkapan layar yang diminta                        | Peramban berbasis Chrome; [analisis peramban](https://rea.tools/id/guides/browser/)                                            |
-| Rekaman jaringan tersimpan | Permintaan, respons, payload yang terekspos, dan lokasi sumber                                        | HAR; mitmdump di Linux untuk rekaman native mitmproxy; [panduan rekaman](../web-network-captures.md)                           |
-| Capturan paket             | Endpoint, DNS, TLS SNI, distribusi protokol, dan permintaan HTTP                                      | tshark dan capinfos buatan pemanggil; [panduan pcap](../pcap-analysis.md)                                                      |
-| Assembly .NET              | Metadata, instruksi CIL, dependensi native yang dideklarasikan, dan perbandingan build                | Tidak ada (hanya analisis statis); [panduan kode terkelola](../managed-code-analysis.md)                                       |
-| APK Android                | Deklarasi manifest, kelas, metode hasil dekompilasi, dan referensi                                    | JADX mode headless dan JDK lengkap di Linux/macOS/Windows x64; [panduan Android](../android-analysis.md)                       |
-| Perangkat Android          | Perangkat, paket, proses, log, dump, tangkapan layar, serta transfer APK/berkas                       | adb buatan pemanggil (emulator atau perangkat); [panduan ADB](../adb-device-analysis.md)                                       |
-| Proyek JEB                 | Unit proyek bertenaga mesin, hash artefak, dan pseudokode tipe/metode                                 | Klien JEB yang dijalankan pemanggil dan menyajikan MCP, dipilih dengan REA_JEB_MCP_URL; [panduan JEB](../jeb-analysis.md)      |
-| Resource Android           | Manifest terdekode, tabel string, lokal, dan fakta versi                                              | Peluncur Apktool buatan pemanggil; [panduan resource](../apktool-resource-analysis.md)                                         |
-| Aplikasi Flutter           | Hash snapshot Dart, hash pustaka per ABI, dan asal build engine                                       | Tidak ada (parsing APK statis); [panduan Flutter](../flutter-analysis.md)                                                      |
-| Firmware                   | Wilayah, hasil ekstraksi, dan pengalihan ke analisis native                                           | Binwalk / Unblob di Linux; [panduan firmware](../firmware-analysis.md)                                                         |
-| Paket rekaman              | Kolom terpilih, nilai berulang, filter, dan aturan decode-as                                          | Linux: TShark 4.x + prlimit; [panduan tangkapan](../packet-captures.md)                                                        |
-| Sinyal logika terekam      | Anotasi dekoder, rentang sampel, dan diagnostik                                                       | Linux: sigrok-cli 0.7.2 + prlimit; [panduan sinyal](../signal-recordings.md)                                                   |
-| Paket dan sumber daya      | Inventaris berkas, digest, plist, struktur paket Apple, dan sumber daya yang diekstrak                | [Panduan artefak dan JavaScript](../javascript-artifact-reconstruction.md), [aplikasi Apple](../apple-application-analysis.md) |
-| Perilaku proses            | Keluaran terminal, interaksi, pengamatan proses keluar dan sistem berkas, serta perbandingan eksekusi | Linux/macOS dengan PTY native; [perekaman proses](../process-capture.md)                                                       |
+| Rekaman jaringan tersimpan | Permintaan, respons, payload yang terekspos, dan lokasi sumber                                        | HAR; mitmdump di Linux untuk rekaman native mitmproxy; [panduan rekaman](../guides/web/web-network-captures.md)                           |
+| Capturan paket             | Endpoint, DNS, TLS SNI, distribusi protokol, dan permintaan HTTP                                      | tshark dan capinfos buatan pemanggil; [panduan pcap](../guides/data/pcap-analysis.md)                                                      |
+| Assembly .NET              | Metadata, instruksi CIL, dependensi native yang dideklarasikan, dan perbandingan build                | Tidak ada (hanya analisis statis); [panduan kode terkelola](../guides/managed/managed-code-analysis.md)                                       |
+| APK Android                | Deklarasi manifest, kelas, metode hasil dekompilasi, dan referensi                                    | JADX mode headless dan JDK lengkap di Linux/macOS/Windows x64; [panduan Android](../guides/android/android-analysis.md)                       |
+| Perangkat Android          | Perangkat, paket, proses, log, dump, tangkapan layar, serta transfer APK/berkas                       | adb buatan pemanggil (emulator atau perangkat); [panduan ADB](../guides/android/adb-device-analysis.md)                                       |
+| Proyek JEB                 | Unit proyek bertenaga mesin, hash artefak, dan pseudokode tipe/metode                                 | Klien JEB yang dijalankan pemanggil dan menyajikan MCP, dipilih dengan REA_JEB_MCP_URL; [panduan JEB](../providers/jeb-analysis.md)      |
+| Resource Android           | Manifest terdekode, tabel string, lokal, dan fakta versi                                              | Peluncur Apktool buatan pemanggil; [panduan resource](../guides/android/apktool-resource-analysis.md)                                         |
+| Aplikasi Flutter           | Hash snapshot Dart, hash pustaka per ABI, dan asal build engine                                       | Tidak ada (parsing APK statis); [panduan Flutter](../guides/android/flutter-analysis.md)                                                      |
+| Firmware                   | Wilayah, hasil ekstraksi, dan pengalihan ke analisis native                                           | Binwalk / Unblob di Linux; [panduan firmware](../guides/firmware/firmware-analysis.md)                                                         |
+| Paket rekaman              | Kolom terpilih, nilai berulang, filter, dan aturan decode-as                                          | Linux: TShark 4.x + prlimit; [panduan tangkapan](../guides/data/packet-captures.md)                                                        |
+| Sinyal logika terekam      | Anotasi dekoder, rentang sampel, dan diagnostik                                                       | Linux: sigrok-cli 0.7.2 + prlimit; [panduan sinyal](../guides/signals/signal-recordings.md)                                                   |
+| Paket dan sumber daya      | Inventaris berkas, digest, plist, struktur paket Apple, dan sumber daya yang diekstrak                | [Panduan artefak dan JavaScript](../guides/javascript/javascript-artifact-reconstruction.md), [aplikasi Apple](../guides/apple/apple-application-analysis.md) |
+| Perilaku proses            | Keluaran terminal, interaksi, pengamatan proses keluar dan sistem berkas, serta perbandingan eksekusi | Linux/macOS dengan PTY native; [perekaman proses](../guides/runtime/process-capture.md)                                                       |
 
 Pemeriksaan JavaScript dan .NET statis membaca berkas yang disediakan tanpa menjalankan aplikasinya. Perekaman runtime menjalankan atau berinteraksi dengan target yang dipilih menggunakan izin pengguna Anda. Setiap panduan runtime menjelaskan dampaknya.
 
 <a id="choosing-a-deep-analysis-provider"></a>
 
-Format native dan dukungan sistem host berbeda-beda menurut penyedia. Lihat [penyiapan Hopper dan Ghidra](../installation.md#hopper), [panduan IDA](../ida-provider.md), dan [dukungan eksperimental Ghidra di Windows](../windows-ghidra-p0.md).
+Format native dan dukungan sistem host berbeda-beda menurut penyedia. Lihat [penyiapan Hopper dan Ghidra](../getting-started/installation.md#hopper), [panduan IDA](../providers/ida-provider.md), dan [dukungan eksperimental Ghidra di Windows](../providers/windows-ghidra-p0.md).
 
-Ghidra juga mendukung [analisis DOS 16-bit](../ghidra-dos.md).
+Ghidra juga mendukung [analisis DOS 16-bit](../providers/ghidra-dos.md).
 
 Untuk biner berukuran besar, tingkatkan batas waktu startup menggunakan `REA_GHIDRA_STARTUP_TIMEOUT_MS`.
 
-Untuk memilih penyedia, lihat [panduan CLI](../cli.md#choose-a-provider).
+Untuk memilih penyedia, lihat [panduan CLI](../getting-started/cli.md#choose-a-provider).
 
-Periksa [ketersediaan rilis](../installation.md#released-package-and-main) untuk mengetahui fitur yang ditambahkan setelah rilis npm terbaru.
+Periksa [ketersediaan rilis](../getting-started/installation.md#released-package-and-main) untuk mengetahui fitur yang ditambahkan setelah rilis npm terbaru.
 
 ## Contoh Penggunaan
 
@@ -202,7 +202,7 @@ Jika Anda telah menggunakan REA untuk menganalisis sesuatu yang menarik, kami in
 <details>
 <summary><strong>Agen apa saja yang dapat menggunakan REA?</strong></summary>
 
-Agen apa pun yang mendukung server MCP lokal dapat menggunakan REA. Proses penyiapan mengonfigurasi [agen yang didukung](../installation.md#supported-agents). Klien lain dapat menggunakan [pendaftaran MCP manual](../installation.md#mcp-registry).
+Agen apa pun yang mendukung server MCP lokal dapat menggunakan REA. Proses penyiapan mengonfigurasi [agen yang didukung](../getting-started/installation.md#supported-agents). Klien lain dapat menggunakan [pendaftaran MCP manual](../getting-started/installation.md#mcp-registry).
 
 </details>
 
@@ -211,7 +211,7 @@ Agen apa pun yang mendukung server MCP lokal dapat menggunakan REA. Proses penyi
 
 Analisis native mendalam menggunakan salah satu dari ketiganya. Pemeriksaan JavaScript dan .NET statis dapat dilakukan tanpa mesin analisis native.
 
-Proses penyiapan dapat memasang Hopper setelah memperoleh persetujuan. Ghidra dan IDA menggunakan instalasi yang sudah tersedia. Lihat [penyiapan penyedia](../installation.md#hopper).
+Proses penyiapan dapat memasang Hopper setelah memperoleh persetujuan. Ghidra dan IDA menggunakan instalasi yang sudah tersedia. Lihat [penyiapan penyedia](../getting-started/installation.md#hopper).
 
 </details>
 
@@ -220,7 +220,7 @@ Proses penyiapan dapat memasang Hopper setelah memperoleh persetujuan. Ghidra da
 
 REA akan menjalankan Hopper saat suatu operasi membutuhkannya. Di macOS, dialog saat pertama kali dijalankan mungkin meminta Anda memilih mode demo atau mengaktifkan lisensi.
 
-Lihat [startup dan pemecahan masalah Hopper](../installation.md#launcher-paths-and-troubleshooting).
+Lihat [startup dan pemecahan masalah Hopper](../getting-started/installation.md#launcher-paths-and-troubleshooting).
 
 </details>
 
@@ -229,7 +229,7 @@ Lihat [startup dan pemecahan masalah Hopper](../installation.md#launcher-paths-a
 
 Skill tersebut menyediakan instruksi investigasi untuk agen Anda. Gunakan `npx rea-agents setup` untuk mendaftarkan server MCP REA dan memasang instruksi yang sesuai, lalu mulai ulang agen Anda.
 
-Lihat [instalasi khusus skill](../installation.md#skill-only-installation).
+Lihat [instalasi khusus skill](../getting-started/installation.md#skill-only-installation).
 
 </details>
 
@@ -276,12 +276,12 @@ Mulailah dengan [panduan praktik di situs web](https://rea.tools/id/guides/).
 
 Untuk mengetahui opsi, prasyarat, dan kontrak hasil secara tepat:
 
-- [Instalasi dan penyiapan](../installation.md): pendaftaran agen, konfigurasi penyedia, pembaruan, dan penghapusan instalasi.
-- [Kesiapan dan pemecahan masalah](../installation.md#check-readiness-for-your-task): mendiagnosis satu agen atau mesin analisis.
-- [CLI dan Bukti](../cli.md): perintah, pemilihan penyedia, snapshot, impor/ekspor, dan status keluar.
-- [Kontrak MCP](../mcp-contracts.md) dan [prompt agen](../mcp-prompts.md): hasil alat, sesi, dan investigasi terpandu.
-- [Katalog alat](../mcp-contracts.md#generated-catalog): inventaris alat, penyedia, dan perintah CLI yang dibuat secara otomatis.
-- [Peta jalan](../roadmap.md): pekerjaan yang direncanakan dan pelacak kemampuan.
+- [Instalasi dan penyiapan](../getting-started/installation.md): pendaftaran agen, konfigurasi penyedia, pembaruan, dan penghapusan instalasi.
+- [Kesiapan dan pemecahan masalah](../getting-started/installation.md#check-readiness-for-your-task): mendiagnosis satu agen atau mesin analisis.
+- [CLI dan Bukti](../getting-started/cli.md): perintah, pemilihan penyedia, snapshot, impor/ekspor, dan status keluar.
+- [Kontrak MCP](../reference/mcp-contracts.md) dan [prompt agen](../getting-started/mcp-prompts.md): hasil alat, sesi, dan investigasi terpandu.
+- [Katalog alat](../reference/mcp-contracts.md#generated-catalog): inventaris alat, penyedia, dan perintah CLI yang dibuat secara otomatis.
+- [Peta jalan](../development/roadmap.md): pekerjaan yang direncanakan dan pelacak kemampuan.
 
 Laporkan kerentanan melalui [SECURITY.md](../../SECURITY.md).
 
@@ -313,7 +313,7 @@ applicable licenses.
 
 Kami sangat menghargai bantuan Anda untuk REA! [Buat issue](https://github.com/morluto/rea/issues) untuk melaporkan bug atau menyarankan fitur, atau [kirim pull request](https://github.com/morluto/rea/pulls) untuk meningkatkan kode atau dokumentasi.
 
-Lihat [CONTRIBUTING.md](../../CONTRIBUTING.md) untuk penyiapan pengembangan dan pemeriksaan, [pengujian](../testing.md) untuk tahapan verifikasi, serta [peta arsitektur](../architecture.mermaid) untuk struktur proyek.
+Lihat [CONTRIBUTING.md](../../CONTRIBUTING.md) untuk penyiapan pengembangan dan pemeriksaan, [pengujian](../development/testing.md) untuk tahapan verifikasi, serta [peta arsitektur](../architecture.mermaid) untuk struktur proyek.
 
 ## Lisensi
 

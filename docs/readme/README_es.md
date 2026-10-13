@@ -9,7 +9,7 @@
 **¿Ves una función que te gusta? Entiende cómo funciona, hasta el nivel binario.**
 
 [![npm version](https://img.shields.io/npm/v/rea-agents?style=flat-square&color=cb3837)](https://www.npmjs.com/package/rea-agents)
-[![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](../mcp-contracts.md#generated-catalog)
+[![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](../reference/mcp-contracts.md#generated-catalog)
 [![Node.js requirements](https://img.shields.io/badge/Node.js-requirements-339933?style=flat-square&logo=nodedotjs&logoColor=white)](#current-status)
 [![skills.sh](https://skills.sh/b/morluto/rea?style=flat-square)](https://skills.sh/morluto/rea/reverse-engineer-anything)
 [![MIT license](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](../../LICENSE)
@@ -67,7 +67,7 @@ npx rea-agents setup
 
 Elige tus agentes, revisa los cambios propuestos y apruébalos. La configuración añade el servidor MCP de REA y las instrucciones de trabajo correspondientes, con copias de seguridad de la configuración existente. Reinicia tu agente al terminar.
 
-La configuración admite Claude Code, Codex, Cursor, Gemini CLI, Grok Build y [otros agentes](../installation.md#supported-agents). Consulta [instalación y configuración](../installation.md) para configurar proveedores y registrar MCP manualmente.
+La configuración admite Claude Code, Codex, Cursor, Gemini CLI, Grok Build y [otros agentes](../getting-started/installation.md#supported-agents). Consulta [instalación y configuración](../getting-started/installation.md) para configurar proveedores y registrar MCP manualmente.
 
 ### Pregunta a tu agente
 
@@ -94,7 +94,7 @@ npm install --global rea-agents
 rea --help
 ```
 
-Para el análisis nativo, configura primero un proveedor. Consulta la [guía de CLI y Evidence](../cli.md) para los comandos nativos, la selección de proveedores, las instantáneas y el uso en scripts.
+Para el análisis nativo, configura primero un proveedor. Consulta la [guía de CLI y Evidence](../getting-started/cli.md) para los comandos nativos, la selección de proveedores, las instantáneas y el uso en scripts.
 
 ### Actualiza REA
 
@@ -133,30 +133,30 @@ REA requiere Node.js 22.x (>=22.19), 24.x (>=24.11) o 26+, además de npm. Las h
 | Objetivo                    | Qué devuelve REA                                                                                                               | Requisitos y guía                                                                                                                      |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Binarios nativos            | Pseudocódigo, ensamblador, cadenas, símbolos, llamadas y referencias                                                           | Hopper, Ghidra o IDA; [análisis nativo](https://rea.tools/es/guides/native/)                                                           |
-| Estructura ELF sin ejecutar | Secciones, segmentos, símbolos/reubicaciones originales y posibles medidas de mitigación detectadas mediante análisis estático | pwntools proporcionado por quien llama, en Linux x64; [diagnóstico de binarios](../binary-diagnostics.md)                              |
-| Bytecode EVM                | Selectores de despacho, desplazamientos en bytes, argumentos inferidos y mutabilidad                                           | Entrada local con bytes sin procesar o representación hexadecimal, en Linux x64; [guía de EVM sin ejecutar](../evm-bytecode.md)        |
-| Fallos de Linux registrados | Registros note sin procesar, registros/señales de cada hilo registrado y posibles correspondencias de memoria opcionales       | pwntools proporcionado por quien llama, en Linux x64; GDB/pwndbg opcionales; [fallos registrados](../recorded-crashes.md)              |
+| Estructura ELF sin ejecutar | Secciones, segmentos, símbolos/reubicaciones originales y posibles medidas de mitigación detectadas mediante análisis estático | pwntools proporcionado por quien llama, en Linux x64; [diagnóstico de binarios](../guides/native/binary-diagnostics.md)                              |
+| Bytecode EVM                | Selectores de despacho, desplazamientos en bytes, argumentos inferidos y mutabilidad                                           | Entrada local con bytes sin procesar o representación hexadecimal, en Linux x64; [guía de EVM sin ejecutar](../guides/evm/evm-bytecode.md)        |
+| Fallos de Linux registrados | Registros note sin procesar, registros/señales de cada hilo registrado y posibles correspondencias de memoria opcionales       | pwntools proporcionado por quien llama, en Linux x64; GDB/pwndbg opcionales; [fallos registrados](../guides/native/recorded-crashes.md)              |
 | JavaScript / Electron       | Módulos, importaciones, mapas de código fuente, rutas, IPC y relaciones con complementos nativos                               | Node.js y npm; [análisis de aplicaciones](https://rea.tools/es/guides/javascript/)                                                     |
 | Sitios web                  | Estructura de la página, scripts, observaciones de red y capturas de pantalla solicitadas                                      | Un navegador de la familia Chrome; [análisis del navegador](https://rea.tools/es/guides/browser/)                                      |
-| Capturas de red guardadas   | Solicitudes, respuestas, contenido accesible de las cargas útiles y ubicaciones de origen                                      | HAR; mitmdump en Linux para capturas en formato nativo de mitmproxy; [guía de capturas](../web-network-captures.md)                    |
-| Capturas de paquetes        | Endpoints, DNS, TLS SNI, distribución de protocolos y solicitudes HTTP                                                         | tshark y capinfos suministrados por el autor de la llamada; [guía pcap](../pcap-analysis.md)                                           |
-| Ensamblados .NET            | Metadatos, instrucciones CIL, dependencias nativas declaradas y comparaciones de compilaciones                                 | Inspección estática; [guía de código administrado](../managed-code-analysis.md)                                                        |
-| APK de Android              | Declaraciones del manifiesto, clases, métodos descompilados y referencias                                                      | JADX sin interfaz gráfica y un JDK completo en Linux/macOS/Windows x64; [guía de Android](../android-analysis.md)                      |
-| Dispositivos Android        | Dispositivos, paquetes, procesos, registros, volcados, capturas de pantalla y transferencias de APK/archivos                   | adb suministrado por el autor de la llamada (emulador o dispositivo); [guía de ADB](../adb-device-analysis.md)                         |
-| Proyectos JEB               | Unidades de proyecto del motor, resúmenes de artefactos y pseudocódigo de tipos/métodos                                        | Un cliente JEB iniciado por el autor de la llamada que sirve MCP, seleccionado con REA_JEB_MCP_URL; [guía de JEB](../jeb-analysis.md)  |
-| Recursos de Android         | Manifiesto decodificado, tablas de cadenas, idiomas y datos de versión                                                         | Lanzador de Apktool suministrado por el autor de la llamada; [guía de recursos](../apktool-resource-analysis.md)                       |
-| Aplicaciones Flutter        | Hash de snapshot de Dart, resúmenes de bibliotecas por ABI y procedencia de compilación del motor                              | Ninguna (análisis APK estático); [guía de Flutter](../flutter-analysis.md)                                                             |
-| Firmware                    | Regiones, resultados de extracción y derivaciones al análisis nativo                                                           | Binwalk / Unblob en Linux; [guía de firmware](../firmware-analysis.md)                                                                 |
-| Paquetes grabados           | Campos seleccionados, valores repetidos, filtros y reglas de decodificación                                                    | Linux: TShark 4.x + prlimit; [guía de capturas](../packet-captures.md)                                                                 |
-| Señales lógicas grabadas    | Anotaciones del decodificador, rangos de muestras y diagnósticos                                                               | Linux: sigrok-cli 0.7.2 + prlimit; [guía de señales](../signal-recordings.md)                                                          |
-| Paquetes y recursos         | Inventarios de archivos, resúmenes criptográficos, plists, estructura de paquetes de Apple y recursos extraídos                | [Guía de artefactos y JavaScript](../javascript-artifact-reconstruction.md), [aplicaciones de Apple](../apple-application-analysis.md) |
-| Comportamiento de procesos  | Salida de la terminal, interacciones, observaciones de salida y del sistema de archivos, y comparaciones entre ejecuciones     | Linux/macOS con una PTY nativa; [captura de procesos](../process-capture.md)                                                           |
+| Capturas de red guardadas   | Solicitudes, respuestas, contenido accesible de las cargas útiles y ubicaciones de origen                                      | HAR; mitmdump en Linux para capturas en formato nativo de mitmproxy; [guía de capturas](../guides/web/web-network-captures.md)                    |
+| Capturas de paquetes        | Endpoints, DNS, TLS SNI, distribución de protocolos y solicitudes HTTP                                                         | tshark y capinfos suministrados por el autor de la llamada; [guía pcap](../guides/data/pcap-analysis.md)                                           |
+| Ensamblados .NET            | Metadatos, instrucciones CIL, dependencias nativas declaradas y comparaciones de compilaciones                                 | Inspección estática; [guía de código administrado](../guides/managed/managed-code-analysis.md)                                                        |
+| APK de Android              | Declaraciones del manifiesto, clases, métodos descompilados y referencias                                                      | JADX sin interfaz gráfica y un JDK completo en Linux/macOS/Windows x64; [guía de Android](../guides/android/android-analysis.md)                      |
+| Dispositivos Android        | Dispositivos, paquetes, procesos, registros, volcados, capturas de pantalla y transferencias de APK/archivos                   | adb suministrado por el autor de la llamada (emulador o dispositivo); [guía de ADB](../guides/android/adb-device-analysis.md)                         |
+| Proyectos JEB               | Unidades de proyecto del motor, resúmenes de artefactos y pseudocódigo de tipos/métodos                                        | Un cliente JEB iniciado por el autor de la llamada que sirve MCP, seleccionado con REA_JEB_MCP_URL; [guía de JEB](../providers/jeb-analysis.md)  |
+| Recursos de Android         | Manifiesto decodificado, tablas de cadenas, idiomas y datos de versión                                                         | Lanzador de Apktool suministrado por el autor de la llamada; [guía de recursos](../guides/android/apktool-resource-analysis.md)                       |
+| Aplicaciones Flutter        | Hash de snapshot de Dart, resúmenes de bibliotecas por ABI y procedencia de compilación del motor                              | Ninguna (análisis APK estático); [guía de Flutter](../guides/android/flutter-analysis.md)                                                             |
+| Firmware                    | Regiones, resultados de extracción y derivaciones al análisis nativo                                                           | Binwalk / Unblob en Linux; [guía de firmware](../guides/firmware/firmware-analysis.md)                                                                 |
+| Paquetes grabados           | Campos seleccionados, valores repetidos, filtros y reglas de decodificación                                                    | Linux: TShark 4.x + prlimit; [guía de capturas](../guides/data/packet-captures.md)                                                                 |
+| Señales lógicas grabadas    | Anotaciones del decodificador, rangos de muestras y diagnósticos                                                               | Linux: sigrok-cli 0.7.2 + prlimit; [guía de señales](../guides/signals/signal-recordings.md)                                                          |
+| Paquetes y recursos         | Inventarios de archivos, resúmenes criptográficos, plists, estructura de paquetes de Apple y recursos extraídos                | [Guía de artefactos y JavaScript](../guides/javascript/javascript-artifact-reconstruction.md), [aplicaciones de Apple](../guides/apple/apple-application-analysis.md) |
+| Comportamiento de procesos  | Salida de la terminal, interacciones, observaciones de salida y del sistema de archivos, y comparaciones entre ejecuciones     | Linux/macOS con una PTY nativa; [captura de procesos](../guides/runtime/process-capture.md)                                                           |
 
 La inspección estática de JavaScript y .NET lee los archivos suministrados sin ejecutar la aplicación. La captura en ejecución inicia el objetivo seleccionado o interactúa con él con los permisos de tu usuario; cada guía describe sus efectos.
 
 <a id="choosing-a-deep-analysis-provider"></a>
 
-Los formatos nativos y los sistemas anfitriones compatibles varían según el proveedor. Consulta [configuración de Hopper y Ghidra](../installation.md#hopper), la [guía de IDA](../ida-provider.md) y la [compatibilidad experimental de Ghidra en Windows](../windows-ghidra-p0.md). Ghidra también admite [análisis de DOS de 16 bits](../ghidra-dos.md). Para elegir un proveedor, consulta la [guía de CLI](../cli.md#choose-a-provider). Comprueba la [disponibilidad por versión](../installation.md#released-package-and-main) de las funciones añadidas después de la última versión publicada en npm.
+Los formatos nativos y los sistemas anfitriones compatibles varían según el proveedor. Consulta [configuración de Hopper y Ghidra](../getting-started/installation.md#hopper), la [guía de IDA](../providers/ida-provider.md) y la [compatibilidad experimental de Ghidra en Windows](../providers/windows-ghidra-p0.md). Ghidra también admite [análisis de DOS de 16 bits](../providers/ghidra-dos.md). Para elegir un proveedor, consulta la [guía de CLI](../getting-started/cli.md#choose-a-provider). Comprueba la [disponibilidad por versión](../getting-started/installation.md#released-package-and-main) de las funciones añadidas después de la última versión publicada en npm.
 
 ## Casos prácticos
 
@@ -187,28 +187,28 @@ Si has usado REA para investigar algo interesante, nos gustaría verlo. Comparte
 <details>
 <summary><strong>¿Qué agentes pueden usar REA?</strong></summary>
 
-Cualquier agente que admita servidores MCP locales. La configuración prepara los [agentes compatibles](../installation.md#supported-agents); otros clientes pueden usar el [registro manual de MCP](../installation.md#mcp-registry).
+Cualquier agente que admita servidores MCP locales. La configuración prepara los [agentes compatibles](../getting-started/installation.md#supported-agents); otros clientes pueden usar el [registro manual de MCP](../getting-started/installation.md#mcp-registry).
 
 </details>
 
 <details>
 <summary><strong>¿Necesito Hopper, Ghidra o IDA?</strong></summary>
 
-El análisis nativo en profundidad utiliza uno de ellos. La inspección estática de JavaScript y .NET funciona sin un motor de análisis nativo. La configuración puede instalar Hopper después de tu aprobación; Ghidra e IDA usan las instalaciones que ya tienes. Consulta [configuración de proveedores](../installation.md#hopper).
+El análisis nativo en profundidad utiliza uno de ellos. La inspección estática de JavaScript y .NET funciona sin un motor de análisis nativo. La configuración puede instalar Hopper después de tu aprobación; Ghidra e IDA usan las instalaciones que ya tienes. Consulta [configuración de proveedores](../getting-started/installation.md#hopper).
 
 </details>
 
 <details>
 <summary><strong>¿Tengo que iniciar Hopper primero?</strong></summary>
 
-REA inicia Hopper cuando una operación lo necesita. En macOS, puede aparecer un diálogo al iniciarlo por primera vez para elegir el modo de demostración o activar tu licencia. Consulta [inicio de Hopper y resolución de problemas](../installation.md#launcher-paths-and-troubleshooting).
+REA inicia Hopper cuando una operación lo necesita. En macOS, puede aparecer un diálogo al iniciarlo por primera vez para elegir el modo de demostración o activar tu licencia. Consulta [inicio de Hopper y resolución de problemas](../getting-started/installation.md#launcher-paths-and-troubleshooting).
 
 </details>
 
 <details>
 <summary><strong>¿Qué hace la instalación de la skill desde skills.sh?</strong></summary>
 
-La skill proporciona instrucciones de investigación a tu agente. Usa `npx rea-agents setup` para registrar el servidor MCP de REA e instalar las instrucciones correspondientes; después reinicia tu agente. Consulta [instalación solo de la skill](../installation.md#skill-only-installation).
+La skill proporciona instrucciones de investigación a tu agente. Usa `npx rea-agents setup` para registrar el servidor MCP de REA e instalar las instrucciones correspondientes; después reinicia tu agente. Consulta [instalación solo de la skill](../getting-started/installation.md#skill-only-installation).
 
 </details>
 
@@ -251,12 +251,12 @@ Si usas un agente, completa la [actualización de la configuración](#actualiza-
 
 Empieza con las [guías prácticas](https://rea.tools/es/guides/) del sitio web. Para opciones exactas, requisitos y contratos de resultados:
 
-- [Instalación y configuración](../installation.md): registro de agentes, configuración de proveedores, actualizaciones y desinstalación.
-- [Preparación y resolución de problemas](../installation.md#check-readiness-for-your-task): diagnóstico de un agente o motor de análisis concreto.
-- [CLI y Evidence](../cli.md): comandos, selección de proveedores, instantáneas, importación/exportación y estados de salida.
-- [Contratos de MCP](../mcp-contracts.md) y [prompts para agentes](../mcp-prompts.md): resultados de herramientas, sesiones e investigaciones guiadas.
-- [Catálogo de herramientas](../mcp-contracts.md#generated-catalog): inventario de herramientas, proveedores y comandos de CLI generado durante la compilación.
-- [Hoja de ruta](../roadmap.md): trabajo previsto y seguimiento de capacidades.
+- [Instalación y configuración](../getting-started/installation.md): registro de agentes, configuración de proveedores, actualizaciones y desinstalación.
+- [Preparación y resolución de problemas](../getting-started/installation.md#check-readiness-for-your-task): diagnóstico de un agente o motor de análisis concreto.
+- [CLI y Evidence](../getting-started/cli.md): comandos, selección de proveedores, instantáneas, importación/exportación y estados de salida.
+- [Contratos de MCP](../reference/mcp-contracts.md) y [prompts para agentes](../getting-started/mcp-prompts.md): resultados de herramientas, sesiones e investigaciones guiadas.
+- [Catálogo de herramientas](../reference/mcp-contracts.md#generated-catalog): inventario de herramientas, proveedores y comandos de CLI generado durante la compilación.
+- [Hoja de ruta](../development/roadmap.md): trabajo previsto y seguimiento de capacidades.
 
 Informa de vulnerabilidades siguiendo [SECURITY.md](../../SECURITY.md).
 
@@ -288,7 +288,7 @@ applicable licenses.
 
 ¡Nos encantaría que ayudaras con REA! [Abre una issue](https://github.com/morluto/rea/issues) para comunicar un error o proponer una función, o [envía una pull request](https://github.com/morluto/rea/pulls) para mejorar el código o la documentación.
 
-Consulta [CONTRIBUTING.md](../../CONTRIBUTING.md) para preparar el entorno de desarrollo y las comprobaciones, la [guía de pruebas](../testing.md) para los procesos de verificación y el [mapa de arquitectura](../architecture.mermaid) para la estructura del proyecto.
+Consulta [CONTRIBUTING.md](../../CONTRIBUTING.md) para preparar el entorno de desarrollo y las comprobaciones, la [guía de pruebas](../development/testing.md) para los procesos de verificación y el [mapa de arquitectura](../architecture.mermaid) para la estructura del proyecto.
 
 ## Licencia
 
