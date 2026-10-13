@@ -229,6 +229,36 @@ describe("JavaScript semantic analysis: read-modify-write", () => {
     expect(ir.objectOperations.map(({ kind }) => kind)).toEqual(["write"]);
   });
 
+  it.each([
+    ["non-null update", "source.count!++;"],
+    ["non-null compound assignment", "source.count! += 1;"],
+    ["cast compound assignment", "(source.count as number) += 1;"],
+    ["parenthesized update", "(source.count)++;"],
+  ])(
+    "retains the property read in a wrapped read-modify-write: %s",
+    (_name, statement) => {
+      const ir = analyzeJavaScriptSemantics(`
+        const source = { count: 1 };
+        ${statement}
+      `);
+      expect(ir.objectOperations.map(({ kind }) => kind)).toEqual([
+        "read",
+        "write",
+      ]);
+    },
+  );
+
+  it.each([
+    ["cast plain assignment", "(source.count as number) = 2;"],
+    ["non-null delete", "delete source.count!;"],
+  ])("keeps a wrapped %s write-only", (_name, statement) => {
+    const ir = analyzeJavaScriptSemantics(`
+      const source = { count: 1 };
+      ${statement}
+    `);
+    expect(ir.objectOperations.map(({ kind }) => kind)).toEqual(["write"]);
+  });
+
   it("keeps a member in a destructuring default value a read", () => {
     const ir = analyzeJavaScriptSemantics(`
       const source = { count: 1 };

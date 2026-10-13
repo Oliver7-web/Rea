@@ -103,6 +103,15 @@ export const semanticWriteSiteTarget = (node: t.Node): t.Node | null => {
   return null;
 };
 
+/**
+ * True when a write site reads its target's current value before writing it:
+ * compound assignment (`+=`, `||=`, ...) and update (`++`, `--`). Plain
+ * assignment, `delete`, and loop heads write without reading.
+ */
+export const semanticWriteSiteReadsFirst = (site: t.Node): boolean =>
+  (t.isAssignmentExpression(site) && site.operator !== "=") ||
+  t.isUpdateExpression(site);
+
 /** Visit binding and member leaves in direct and destructuring write targets. */
 export function* semanticWriteTargets(
   root: t.Node,
