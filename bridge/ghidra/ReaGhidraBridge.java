@@ -3608,9 +3608,17 @@ public final class ReaGhidraBridge extends HeadlessScript {
      * along every predecessor path would find, at a cost linear in the body for each change.
      */
     private SwiftSelectProvenance swiftSelectProvenance(Function function, SwiftLiteralBudget budget) {
+        // Flow edges can outnumber instructions (jump tables sharing many targets), so both are
+        // counted, without retaining either, and charged before the analysis allocates.
         long count = 0;
-        for (Instruction ignored : currentProgram.getListing().getInstructions(function.getBody(), true)) count++;
-        if (!budget.takeBytes(count * SwiftSelectProvenance.BYTES_PER_INSTRUCTION)) {
+        long edges = 0;
+        for (Instruction instruction : currentProgram.getListing().getInstructions(function.getBody(), true)) {
+            count++;
+            edges += predecessors(function, instruction).size();
+        }
+        if (!budget.takeBytes(
+            count * SwiftSelectProvenance.BYTES_PER_INSTRUCTION + edges * SwiftSelectProvenance.BYTES_PER_EDGE
+        )) {
             return SwiftSelectProvenance.UNAVAILABLE;
         }
         List<Instruction> instructions = new ArrayList<>();
@@ -4405,8 +4413,10 @@ public final class ReaGhidraBridge extends HeadlessScript {
         BitSet[] entries,
         Map<Register, Integer> bits
     ) {
-        // Charged before the analysis allocates: index entry, edges and three register sets.
+        // Charged before the analysis allocates: an index entry and three register sets per
+        // instruction, and per edge its predecessor slot plus a boxed successor in a list.
         static final long BYTES_PER_INSTRUCTION = 512;
+        static final long BYTES_PER_EDGE = 64;
         static final SwiftSelectProvenance UNAVAILABLE = new SwiftSelectProvenance(Map.of(), new BitSet[0], Map.of());
 
         boolean selected(Instruction use, Register register) {
